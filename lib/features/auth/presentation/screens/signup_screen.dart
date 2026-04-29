@@ -1,4 +1,7 @@
+import 'package:ecommerce_app_api_26/features/auth/data/api/auth_api.dart';
+import 'package:ecommerce_app_api_26/features/auth/data/models/successSignUpModel.dart';
 import 'package:ecommerce_app_api_26/features/auth/presentation/screens/login_screen.dart';
+import 'package:ecommerce_app_api_26/features/main_wrapper/presentation/screens/main_wrapper.dart';
 import 'package:flutter/material.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -13,6 +16,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool isLoading=false;
 
   @override
   void dispose() {
@@ -22,12 +26,23 @@ class _SignupScreenState extends State<SignupScreen> {
     super.dispose();
   }
 
-  void _signup() {
+  void _signup()async {
     if (_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Signed up')),
-      );
-      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_)=> LoginScreen()));
+       setState(() {
+         isLoading=true;
+       });
+       try{
+         SuccessSignUpModel? data=await AuthApi().SignUp(name: _nameController.text, email: _emailController.text, password: _passwordController.text );
+         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Signed Up Successfully!")));
+         Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => LoginScreen(),));
+       }
+       catch(e){
+         setState(() {
+           isLoading=false;
+         });
+         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+       }
+
     }
   }
 
@@ -122,7 +137,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         width: double.infinity,
                         height: 50,
                         child: ElevatedButton(
-                          onPressed: _signup,
+                          onPressed:isLoading? null: _signup,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.blue,
                             foregroundColor: Colors.white,
@@ -130,7 +145,7 @@ class _SignupScreenState extends State<SignupScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text('Sign Up', style: TextStyle(fontSize: 18)),
+                          child: isLoading?CircularProgressIndicator():const Text('Sign Up', style: TextStyle(fontSize: 18)),
                         ),
                       ),
                       const SizedBox(height: 16),

@@ -1,3 +1,5 @@
+import 'package:ecommerce_app_api_26/features/auth/data/api/auth_api.dart';
+import 'package:ecommerce_app_api_26/features/auth/data/models/Token_models.dart';
 import 'package:flutter/material.dart';
 import 'package:ecommerce_app_api_26/features/auth/presentation/screens/signup_screen.dart';
 import 'package:ecommerce_app_api_26/features/main_wrapper/presentation/screens/main_wrapper.dart';
@@ -13,6 +15,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool isLoading=false;
 
   @override
   void dispose() {
@@ -21,12 +24,21 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _login() {
+  void _login() async {
     if (_formKey.currentState!.validate()) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const MainWrapper()),
-      );
+      setState(() {
+        isLoading=true;
+      });
+      try{
+        TokenModels? data= await AuthApi().login(email: _emailController.text, password: _passwordController.text);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Logged in successfully!")));
+        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => MainWrapper(),));
+      } catch(e){
+        setState(() {
+          isLoading=false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
     }
   }
 
@@ -104,7 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         width: double.infinity,
                         height: 50,
                         child: ElevatedButton(
-                          onPressed: _login,
+                          onPressed:isLoading?null: _login,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.blue,
                             foregroundColor: Colors.white,
@@ -112,7 +124,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text('Login', style: TextStyle(fontSize: 18)),
+                          child:isLoading?CircularProgressIndicator(): const Text('Login', style: TextStyle(fontSize: 18)),
                         ),
                       ),
                       const SizedBox(height: 16),
