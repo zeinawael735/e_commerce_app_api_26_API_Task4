@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 
+import '../../../cart/data/helper/cartHelper.dart';
+
 class ProductCard extends StatelessWidget {
-  final String title;
-  final double price;
-  final String description;
+  final String? title;
+  final num? price;
+  final String? description;
   final String image;
+  final int id;
 
   const ProductCard({
     super.key,
+    required this.id,
     required this.title,
     required this.price,
     required this.description,
@@ -32,33 +36,48 @@ class ProductCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.blue.shade50, Colors.blue.shade100],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-              ),
-              child: Stack(
-                children: [
-                  const Center(child: Icon(Icons.shopping_bag_outlined, size: 40, color: Colors.blue)),
-                  PositionBag(
-                    top: 10,
-                    right: 10,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
+            child: Stack(
+              children: [
+
+                Container(
+                  width: double.infinity,
+                  height: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                    child: Image.network(
+                      image,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: double.infinity,
+                      errorBuilder: (context, error, stackTrace) => const Center(
+                        child: Icon(Icons.shopping_bag_outlined, size: 50, color: Colors.blue),
                       ),
-                      child: const Icon(Icons.favorite_border, size: 18, color: Colors.red),
                     ),
                   ),
-                ],
-              ),
+                ),
+
+
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.favorite,
+                      color: Colors.red,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           Padding(
@@ -67,14 +86,14 @@ class ProductCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  title!,
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  description,
+                  description!,
                   style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -91,13 +110,35 @@ class ProductCard extends StatelessWidget {
                         fontSize: 18,
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.blue,
-                        borderRadius: BorderRadius.circular(8),
+                    GestureDetector(
+                      onTap: () async{
+                        Map<String, dynamic> productMap = {
+                          'id': id,
+                          'title': title,
+                          'price': price,
+                          'image': image,
+                        };
+
+
+                        await CartHelper.addToCart(productMap);
+
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('$title added to cart! 🛒'),
+                            backgroundColor: Colors.green,
+                            duration: const Duration(seconds: 1),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.blue,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.add, color: Colors.white, size: 20),
                       ),
-                      child: const Icon(Icons.add, color: Colors.white, size: 20),
                     ),
                   ],
                 ),
@@ -121,3 +162,6 @@ class PositionBag extends StatelessWidget {
     return Positioned(top: top, right: right, child: child);
   }
 }
+
+
+

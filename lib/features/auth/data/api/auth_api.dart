@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:ecommerce_app_api_26/core/endpoints.dart';
+import 'package:ecommerce_app_api_26/core/storage/storage_helper.dart';
 import 'package:ecommerce_app_api_26/features/auth/data/models/Token_models.dart';
 import 'package:ecommerce_app_api_26/features/auth/data/models/badRequestModel.dart';
 import 'package:ecommerce_app_api_26/features/auth/data/models/error_model.dart';
@@ -21,6 +22,7 @@ ApiKeys.email:email,
 
     if(response.statusCode==201||response.statusCode==200){
       TokenModels tokenModels=TokenModels.fromJson(json);
+      StorageHelper.saveToken(tokenModels.accessToken!);
       return tokenModels;
     }
     else{

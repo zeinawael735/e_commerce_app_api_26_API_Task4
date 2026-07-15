@@ -1,15 +1,39 @@
 import 'package:flutter/material.dart';
 
-class CartScreen extends StatelessWidget {
+import '../../data/helper/cartHelper.dart';
+
+
+
+class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final List<Map<String, dynamic>> cartItems = List.generate(3, (index) => {
-      'title': 'Premium Product ${index + 1}',
-      'price': (index + 1) * 35.0,
-      'quantity': 1,
+  State<CartScreen> createState() => _CartScreenState();
+}
+
+class _CartScreenState extends State<CartScreen> {
+
+  List<Map<String, dynamic>> cartItems = [];
+  double totalAmount = 0.0;
+  void loadCart() async {
+    final items = await CartHelper.getCartItems();
+    double total = 0;
+    for (var item in items) {
+      total += (item['price'] ?? 0).toDouble();
+    }
+    setState(() {
+      cartItems = items;
+      totalAmount = total;
     });
+  }
+  void initState() {
+    super.initState();
+    loadCart();
+  }
+  @override
+  Widget build(BuildContext context) {
+
+
 
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
@@ -19,7 +43,9 @@ class CartScreen extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
       ),
-      body: Column(
+      body:cartItems.isEmpty
+          ? const Center(child: Text('Your cart is empty 🛒', style: TextStyle(fontSize: 18, color: Colors.grey)))
+          : Column(
         children: [
           Expanded(
             child: ListView.builder(
@@ -49,6 +75,10 @@ class CartScreen extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: Colors.blue.shade50,
                           borderRadius: BorderRadius.circular(12),
+                          image: DecorationImage(
+                            image: NetworkImage(item['image'] ?? 'https://via.placeholder.com/150'),
+                            fit: BoxFit.cover,
+                          ),
                         ),
                         child: const Icon(Icons.shopping_bag_outlined, color: Colors.blue, size: 30),
                       ),
@@ -58,7 +88,7 @@ class CartScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              item['title'],
+                              item['title']??'Product',
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                             ),
                             const SizedBox(height: 4),
@@ -74,7 +104,7 @@ class CartScreen extends StatelessWidget {
                           _buildQtyBtn(Icons.remove, () {}),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 8),
-                            child: Text('${item['quantity']}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                            child: Text('${item['quantity']??1}', style: const TextStyle(fontWeight: FontWeight.bold)),
                           ),
                           _buildQtyBtn(Icons.add, () {}),
                         ],
@@ -104,7 +134,7 @@ class CartScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('Total Amount', style: TextStyle(color: Colors.grey.shade600, fontSize: 16)),
-                    const Text('\$210.0', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blue)),
+                    Text('\$$totalAmount', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blue)),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -112,7 +142,15 @@ class CartScreen extends StatelessWidget {
                   width: double.infinity,
                   height: 60,
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () async{
+
+
+                      await CartHelper.clearCart();
+                      loadCart();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Order Placed Successfully! 🎉')),
+                      );
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       foregroundColor: Colors.white,

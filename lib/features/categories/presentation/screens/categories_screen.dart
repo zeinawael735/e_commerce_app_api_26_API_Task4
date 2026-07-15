@@ -1,3 +1,7 @@
+import 'package:ecommerce_app_api_26/features/categories/data/categories_api/Categories_api.dart';
+import 'package:ecommerce_app_api_26/features/categories/data/models/categoriesModel.dart';
+import 'package:ecommerce_app_api_26/features/categories/presentation/screens/productsbycategory.dart';
+import 'package:ecommerce_app_api_26/features/categories/presentation/widgets/categories_card.dart';
 import 'package:flutter/material.dart';
 
 class CategoriesScreen extends StatelessWidget {
@@ -22,50 +26,39 @@ class CategoriesScreen extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
       ),
-      body: GridView.builder(
-        padding: const EdgeInsets.all(16),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 1.1,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-        ),
-        itemCount: categories.length,
-        itemBuilder: (context, index) {
-          final category = categories[index];
-          return Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 5),
-                )
-              ],
+      body: FutureBuilder(future: CategoriesApi().getAllCategories(), builder:(context, snapshot) {
+        if(snapshot.connectionState==ConnectionState.waiting){
+          return Center(child: CircularProgressIndicator());
+        }
+
+        if(snapshot.hasError||snapshot.data==null) {
+          return Center(child: Text(snapshot.error.toString(),
+            style: TextStyle(color: Colors.red, fontWeight: .bold, fontSize: 15),));
+        }
+        List<CategoriesModel>?categories=snapshot.data;
+        return
+          GridView.builder(
+            padding: const EdgeInsets.all(16),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 1.1,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: (category['color'] as Color).withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(category['icon'], color: category['color'], size: 32),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  category['name'],
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-              ],
-            ),
+            itemCount: categories!.length,
+            itemBuilder: (context, index) {
+              final category = categories[index];
+              return GestureDetector(
+                onTap: (){
+                  Navigator.of(context).push(MaterialPageRoute(builder: (context) =>Productsbycategory(id: category.id??1) ,));
+                },
+                child: CategoryCard(id: category.id
+                    , name:category.name , imageUrl:
+                category.image),
+              );
+            },
           );
-        },
-      ),
+      },)
     );
   }
 }

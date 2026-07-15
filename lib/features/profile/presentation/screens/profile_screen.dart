@@ -1,103 +1,176 @@
+import 'package:ecommerce_app_api_26/features/profile/data/models/profile_models.dart';
+import 'package:ecommerce_app_api_26/features/profile/data/profile_api/profile_api.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+
+  File? _selectedImage;
+  late Future<ProfileModel> _profileFuture;
+  Future<void> uploadAndRefresh() async {
+    final ImagePicker picker = ImagePicker();
+    final  pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        _selectedImage = File(pickedFile.path);
+      });
+
+      try {
+
+        final successModel = await ProfileApi().uploadAvatar(_selectedImage!);
+
+
+        ProfileModel profile = await ProfileApi().getProfile();
+        await ProfileApi().updateProfileAvatar(profile.id!, successModel.location!);
+
+
+
+        setState(() {
+          _profileFuture = ProfileApi().getProfile();
+        });
+
+
+
+      } catch (e) {
+        print(" ${e.toString()}");
+      }
+    }
+  }
+
+
+  @override
+
+
+  void initState() {
+    super.initState();
+
+    _profileFuture = ProfileApi().getProfile();
+  }
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.fromLTRB(24, 60, 24, 30),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.blue.shade400, Colors.blue.shade700],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(40)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 3),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 10,
-                        )
-                      ],
-                    ),
-                    child: const CircleAvatar(
-                      radius: 40,
-                      backgroundColor: Colors.white,
-                      child: Icon(Icons.person, size: 40, color: Colors.blue),
-                    ),
-                  ),
-                  const SizedBox(width: 20),
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'John Doe',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      Text(
-                        'Premium Member',
-                        style: TextStyle(color: Colors.white70, fontSize: 14),
-                      ),
+      body:FutureBuilder(future: _profileFuture, builder:(context, snapshot) {
+        if(snapshot.connectionState==ConnectionState.waiting){
+return Center(child: CircularProgressIndicator());
+}
+
+if(snapshot.hasError||snapshot.data==null) {
+  return Center(child: Text(snapshot.error.toString(),
+    style: TextStyle(color: Colors.red, fontWeight: .bold, fontSize: 15),));
+}
+ProfileModel? data=snapshot.data;
+return
+  SingleChildScrollView(
+    child: Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.fromLTRB(24, 60, 24, 30),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blue.shade400, Colors.blue.shade700],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(40)),
+          ),
+          child: Row(
+            children: [
+              GestureDetector(
+                onTap: (){
+
+                  uploadAndRefresh();
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 3),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                      )
                     ],
                   ),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.edit_outlined, color: Colors.white),
-                    onPressed: () {},
+                  child:  CircleAvatar(
+                    radius: 40,
+                    backgroundColor: Colors.white,
+                    backgroundImage: _selectedImage != null
+                        ? FileImage(_selectedImage!) as ImageProvider
+                        : NetworkImage(data!.avatar ?? "https://i.imgur.com/LDOO4Qs.jpg"),
                   ),
-                ],
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
+              const SizedBox(width: 20),
+               Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildSectionTitle('Account Settings'),
-                  _buildProfileTile(Icons.shopping_bag_outlined, 'My Orders', 'Track your orders'),
-                  _buildProfileTile(Icons.favorite_outline, 'Wishlist', 'Your favorite items'),
-                  _buildProfileTile(Icons.location_on_outlined, 'Shipping Address', 'Manage your addresses'),
-                  _buildProfileTile(Icons.payment_outlined, 'Payment Methods', 'Credit cards, wallets'),
-                  const SizedBox(height: 24),
-                  _buildSectionTitle('App Settings'),
-                  _buildProfileTile(Icons.notifications_none, 'Notifications', 'Control your alerts'),
-                  _buildProfileTile(Icons.lock_outline, 'Privacy', 'Manage your security'),
-                  const SizedBox(height: 32),
-                  SizedBox(
-                    width: double.infinity,
-                    child: TextButton.icon(
-                      onPressed: () {},
-                      icon: const Icon(Icons.logout, color: Colors.red),
-                      label: const Text('Logout', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.all(16),
-                        backgroundColor: Colors.red.withOpacity(0.05),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                      ),
+                  Text(
+                    data?.name??" ",
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
+                  Text(
+                    data?.role??"Null",
+                    style: TextStyle(color: Colors.white70, fontSize: 14),
+                  ),
                 ],
               ),
-            ),
-          ],
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, color: Colors.white),
+                onPressed: () {
+                  uploadAndRefresh();
+                },
+              ),
+            ],
+          ),
         ),
-      ),
+        Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            children: [
+              _buildSectionTitle('Account Settings'),
+              _buildProfileTile(Icons.shopping_bag_outlined, 'My Orders', 'Track your orders'),
+              _buildProfileTile(Icons.favorite_outline, 'Wishlist', 'Your favorite items'),
+              _buildProfileTile(Icons.location_on_outlined, 'Shipping Address', 'Manage your addresses'),
+              _buildProfileTile(Icons.payment_outlined, 'Payment Methods', 'Credit cards, wallets'),
+              const SizedBox(height: 24),
+              _buildSectionTitle('App Settings'),
+              _buildProfileTile(Icons.notifications_none, 'Notifications', 'Control your alerts'),
+              _buildProfileTile(Icons.lock_outline, 'Privacy', 'Manage your security'),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton.icon(
+                  onPressed: () {},
+                  icon: const Icon(Icons.logout, color: Colors.red),
+                  label: const Text('Logout', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.all(16),
+                    backgroundColor: Colors.red.withOpacity(0.05),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+},)
     );
   }
 
